@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM & SLM Use Case Selector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .model-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .use-case-btn.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-2">LLM & SLM Use Case Selector</h1>
+            <p class="text-lg text-gray-600">Find the right model for your task.</p>
+        </header>
+
+        <!-- Suggestion Section -->
+        <section id="suggestion-section" class="mb-12 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-3xl font-bold text-center mb-6">Get a Model Recommendation</h2>
+            <div class="max-w-2xl mx-auto">
+                <p class="text-center text-gray-600 mb-4">Describe what you want to do, and we'll suggest the best model for the job.</p>
+                <textarea id="use-case-input" class="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition" placeholder="e.g., 'I need to write a python script to analyze a CSV file' or 'I want a chatbot for my mobile app that can work offline'"></textarea>
+                <div class="flex justify-center mt-4 gap-4">
+                    <button id="suggest-btn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition shadow">Suggest Model</button>
+                    <button id="clear-suggestion-btn" class="px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-full hover:bg-gray-300 transition shadow hidden">Clear Suggestion</button>
+                </div>
+                <div id="suggestion-result" class="mt-6 text-center"></div>
+            </div>
+        </section>
+
+        <!-- Use Case Filters -->
+        <div id="use-case-filters" class="flex flex-wrap justify-center gap-2 mb-10">
+            <button class="use-case-btn active px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="all">All Models</button>
+            <button class="use-case-btn px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="creative">Creative Writing</button>
+            <button class="use-case-btn px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="code">Code Generation</button>
+            <button class="use-case-btn px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="chat">Chat & Conversation</button>
+            <button class="use-case-btn px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="analysis">Data Analysis</button>
+            <button class="use-case-btn px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium hover:bg-gray-100 transition" data-filter="mobile">On-Device / Mobile</button>
+        </div>
+
+        <!-- Models Grid -->
+        <div id="models-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Model cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Token Utilization Section -->
+        <section class="mt-20 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-3xl font-bold text-center mb-6">Understanding Token Utilization</h2>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/2">
+                    <h3 class="text-xl font-semibold mb-2">What is a Token?</h3>
+                    <p class="text-gray-600 mb-4">
+                        Language models don't see words like we do. They break down text into smaller units called "tokens." A token can be a word, a part of a word, or even just a punctuation mark.
+                    </p>
+                    <p class="text-gray-600">
+                        A good rule of thumb is that **1 token is approximately 4 characters or 0.75 words** for common English text. The total number of tokens in your input (prompt) and the model's output (response) determines the computational cost.
+                    </p>
+                </div>
+                <div class="md:w-1/2">
+                     <h3 class="text-xl font-semibold mb-2">Live Token Estimator</h3>
+                    <textarea id="token-input" class="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition" placeholder="Type or paste text here to estimate token count..."></textarea>
+                    <p class="text-right mt-2 font-medium">Estimated Tokens: <span id="token-count" class="text-indigo-600 font-bold">0</span></p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Use Case Examples Section -->
+        <section class="mt-16">
+            <h2 class="text-3xl font-bold text-center mb-8">Example Use Cases</h2>
+            <div id="use-case-examples" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                <h3 class="text-2xl font-semibold mb-4" id="example-title">Select a Model to see Examples</h3>
+                <div id="example-content" class="text-gray-700 space-y-4">
+                   <p>Click on a model card above to see detailed examples of its common use cases, including sample prompts and expected outputs.</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        const models = [
+            {
+                name: "Gemini 1.5 Pro",
+                description: "A highly capable, multimodal model that excels at understanding long contexts, complex reasoning, and processing various data formats including video and audio.",
+                tags: ["Complex Reasoning", "Multimodal", "Large Context"],
+                use_cases: ["analysis", "chat", "creative"],
+                color: "blue",
+                examples: {
+                    title: "Gemini 1.5 Pro Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Video Content Analysis</p>
+                        <p class="mb-2"><strong>Prompt:</strong> "Given this 10-minute video of a user testing our new app, identify the top 3 moments of user frustration and provide timestamps."</p>
+                        <p class="font-semibold">Use Case: Code Review from a large codebase</p>
+                        <p><strong>Prompt:</strong> "Analyze this entire repository (100k lines of code) and identify potential security vulnerabilities."</p>
+                    `
+                }
+            },
+            {
+                name: "GPT-4o",
+                description: "The latest flagship model from OpenAI, optimized for speed and multimodality. It offers powerful text, vision, and audio capabilities with very low latency.",
+                tags: ["High-Performance", "Chat", "Multimodal"],
+                use_cases: ["chat", "creative", "analysis", "code"],
+                 color: "green",
+                examples: {
+                    title: "GPT-4o Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Real-time Voice Translation</p>
+                        <p class="mb-2"><strong>Input:</strong> (Spoken in English) "Can you tell me how to get to the nearest train station?"<br><strong>Output:</strong> (Spoken in Japanese) "最寄りの駅への行き方を教えていただけますか？"</p>
+                        <p class="font-semibold">Use Case: Creative Writing Assistant</p>
+                        <p><strong>Prompt:</strong> "Write a short, suspenseful story intro about a detective who finds a mysterious, glowing key."</p>
+                    `
+                }
+            },
+            {
+                name: "Llama 3",
+                description: "A powerful, open-source model from Meta, great for a wide range of tasks, particularly for developers looking to fine-tune and build custom applications.",
+                tags: ["Open Source", "General Purpose", "Fine-tuning"],
+                use_cases: ["chat", "code", "creative"],
+                color: "orange",
+                examples: {
+                    title: "Llama 3 Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Customer Support Chatbot</p>
+                        <p class="mb-2"><strong>Prompt:</strong> "A customer is asking for a refund for order #12345. Our policy states refunds are only possible within 30 days. The order was placed 45 days ago. Draft a polite refusal."</p>
+                        <p class="font-semibold">Use Case: Content Summarization</p>
+                        <p><strong>Prompt:</strong> "Summarize the key points of this lengthy news article about renewable energy trends into three bullet points."</p>
+                    `
+                }
+            },
+            {
+                name: "Phi-3 Mini",
+                description: "A small, yet surprisingly capable model from Microsoft designed to run locally on devices like laptops and smartphones. Optimized for performance with limited resources.",
+                tags: ["Small Model (SLM)", "On-Device", "Fast"],
+                use_cases: ["mobile", "chat"],
+                color: "purple",
+                examples: {
+                    title: "Phi-3 Mini Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Smart Reply on Mobile</p>
+                        <p class="mb-2"><strong>Context:</strong> An incoming email says "Can you join the meeting at 3 PM?".<br><strong>Generated Replies:</strong> "Yes, I can make it.", "Sorry, I have a conflict.", "Can we do 3:30 PM instead?"</p>
+                        <p class="font-semibold">Use Case: Offline Grammar Correction</p>
+                        <p><strong>Input:</strong> "I is going to the store."<br><strong>Output:</strong> "I am going to the store."</p>
+                    `
+                }
+            },
+             {
+                name: "Claude 3 Opus",
+                description: "Anthropic's most powerful model, offering top-tier performance on complex tasks, analysis, and creative writing. Known for its 'Constitutional AI' approach to safety.",
+                tags: ["Top-tier Performance", "Research", "Safety"],
+                use_cases: ["analysis", "creative"],
+                 color: "yellow",
+                examples: {
+                    title: "Claude 3 Opus Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Analyzing Financial Reports</p>
+                        <p class="mb-2"><strong>Prompt:</strong> "Analyze this quarterly earnings report PDF and summarize the key financial highlights, risks, and outlook."</p>
+                        <p class="font-semibold">Use Case: Philosophical Dialogue</p>
+                        <p><strong>Prompt:</strong> "Explore the ethical implications of artificial consciousness from the perspective of both a utilitarian and a deontologist."</p>
+                    `
+                }
+            },
+            {
+                name: "Codestral",
+                description: "A specialized open-source model from Mistral AI, specifically designed for code generation, completion, and fixing bugs across many programming languages.",
+                tags: ["Code Generation", "Open Source", "Developer Tool"],
+                use_cases: ["code"],
+                color: "red",
+                examples: {
+                    title: "Codestral Examples",
+                    content: `
+                        <p class="font-semibold">Use Case: Python Function Generation</p>
+                        <p class="mb-2"><strong>Prompt:</strong> "Write a Python function that takes a list of URLs and returns a list of their HTTP status codes, handling potential errors."</p>
+                        <p class="font-semibold">Use Case: SQL Query Writing</p>
+                        <p><strong>Prompt:</strong> "Generate a SQL query to find all users who signed up in the last 30 days and have made more than 5 purchases."</p>
+                    `
+                }
+            }
+        ];
+
+        const colors = {
+            blue: { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+            green: { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
+            orange: { bg: 'bg-orange-100', text: 'text-orange-800', border: 'border-orange-300' },
+            purple: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+            yellow: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
+            red: { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300' }
+        };
+
+        // --- DOM ELEMENTS ---
+        const modelsGrid = document.getElementById('models-grid');
+        const exampleTitle = document.getElementById('example-title');
+        const exampleContent = document.getElementById('example-content');
+        const tokenInput = document.getElementById('token-input');
+        const tokenCount = document.getElementById('token-count');
+        const filterButtons = document.querySelectorAll('.use-case-btn');
+        const useCaseInput = document.getElementById('use-case-input');
+        const suggestBtn = document.getElementById('suggest-btn');
+        const clearSuggestionBtn = document.getElementById('clear-suggestion-btn');
+        const suggestionResult = document.getElementById('suggestion-result');
+        const useCaseFilters = document.getElementById('use-case-filters');
+
+        // --- CORE LOGIC ---
+        function suggestModel() {
+            const input = useCaseInput.value.toLowerCase();
+            if (!input.trim()) return [];
+
+            const keywords = {
+                code: ['code', 'script', 'python', 'javascript', 'sql', 'debug', 'function', 'developer', 'program'],
+                creative: ['story', 'poem', 'write', 'blog', 'essay', 'creative', 'song', 'novel'],
+                chat: ['chat', 'conversation', 'talk', 'support', 'assistant', 'chatbot'],
+                analysis: ['analyze', 'analysis', 'data', 'report', 'csv', 'pdf', 'financial', 'research', 'summarize'],
+                mobile: ['mobile', 'device', 'offline', 'phone', 'local', 'on-device'],
+                multimodal: ['video', 'audio', 'image', 'multimodal', 'vision', 'see']
+            };
+
+            let scores = {};
+            models.forEach(model => scores[model.name] = 0);
+
+            for (const useCase in keywords) {
+                for (const keyword of keywords[useCase]) {
+                    if (input.includes(keyword)) {
+                        models.forEach(model => {
+                            if (model.use_cases.includes(useCase)) scores[model.name]++;
+                        });
+                    }
+                }
+            }
+            
+            if (keywords.multimodal.some(k => input.includes(k))) {
+                if (scores['Gemini 1.5 Pro'] !== undefined) scores['Gemini 1.5 Pro'] += 2;
+                if (scores['GPT-4o'] !== undefined) scores['GPT-4o'] += 2;
+            }
+            if (keywords.mobile.some(k => input.includes(k))) {
+                if (scores['Phi-3 Mini'] !== undefined) scores['Phi-3 Mini'] += 3;
+            }
+             if (keywords.code.some(k => input.includes(k))) {
+                if (scores['Codestral'] !== undefined) scores['Codestral'] += 2;
+            }
+
+            const sortedModels = Object.entries(scores).filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]);
+
+            if (sortedModels.length === 0) return [];
+
+            const topScore = sortedModels[0][1];
+            const recommendedNames = sortedModels.filter(([, score]) => score === topScore).map(([name]) => name);
+
+            return models.filter(model => recommendedNames.includes(model.name));
+        }
+
+        // --- RENDERING FUNCTIONS ---
+        function renderModels(modelsToDisplay) {
+            modelsGrid.innerHTML = '';
+            if (modelsToDisplay.length === 0) {
+                 modelsGrid.innerHTML = `<p class="text-gray-600 md:col-span-2 lg:col-span-3 text-center">No models match the current filter.</p>`;
+                 return;
+            }
+
+            modelsToDisplay.forEach(model => {
+                const colorTheme = colors[model.color];
+                const card = document.createElement('div');
+                card.className = `model-card bg-white p-6 rounded-xl border ${colorTheme.border} shadow-md cursor-pointer`;
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${model.name}</h3>
+                    <p class="text-gray-600 text-sm mb-4">${model.description}</p>
+                    <div>
+                        ${model.tags.map(tag => `<span class="tag ${colorTheme.bg} ${colorTheme.text}">${tag}</span>`).join('')}
+                    </div>
+                `;
+                card.addEventListener('click', () => showExamples(model));
+                modelsGrid.appendChild(card);
+            });
+        }
+
+        function showExamples(model) {
+            exampleTitle.textContent = model.examples.title;
+            exampleContent.innerHTML = model.examples.content;
+            document.getElementById('use-case-examples').scrollIntoView({ behavior: 'smooth' });
+            const allCards = document.querySelectorAll('.model-card');
+            allCards.forEach(c => c.style.borderWidth = '1px');
+            const selectedCard = Array.from(allCards).find(card => card.querySelector('h3').textContent === model.name);
+            if (selectedCard) selectedCard.style.borderWidth = '2px';
+        }
+
+        function updateTokenCount() {
+            const text = tokenInput.value;
+            const count = Math.ceil(text.length / 4);
+            tokenCount.textContent = count;
+        }
+
+        // --- EVENT HANDLERS ---
+        function handleSuggestion() {
+            const recommendedModels = suggestModel();
+
+            useCaseFilters.classList.add('hidden');
+            clearSuggestionBtn.classList.remove('hidden');
+
+            if (recommendedModels.length > 0) {
+                suggestionResult.innerHTML = `<p class="font-semibold text-lg text-indigo-700">Based on your use case, we recommend the following model(s):</p>`;
+                renderModels(recommendedModels);
+                modelsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                suggestionResult.innerHTML = `<p class="text-gray-600">We couldn't determine a specific model for your use case. Here are all available models.</p>`;
+                renderModels(models);
+            }
+        }
+
+        function handleClearSuggestion() {
+            useCaseFilters.classList.remove('hidden');
+            clearSuggestionBtn.classList.add('hidden');
+            suggestionResult.innerHTML = '';
+            useCaseInput.value = '';
+            
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.use-case-btn[data-filter="all"]').classList.add('active');
+
+            renderModels(models);
+        }
+
+        // --- EVENT LISTENERS ---
+        tokenInput.addEventListener('input', updateTokenCount);
+        suggestBtn.addEventListener('click', handleSuggestion);
+        clearSuggestionBtn.addEventListener('click', handleClearSuggestion);
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filter = button.dataset.filter;
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const filteredModels = models.filter(model => filter === 'all' || model.use_cases.includes(filter));
+                renderModels(filteredModels);
+            });
+        });
+
+        // --- INITIAL RENDER ---
+        renderModels(models);
+    </script>
+
+</body>
+</html>
+
